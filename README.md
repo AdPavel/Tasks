@@ -4,6 +4,7 @@
 
 1. клонировать в свою папку
 2. в команднгой строке из своей папки выполнить:
+
 ```python -m main DownloadDataset --GlobalParams-dataset gse68849```
 
 ## Задание
