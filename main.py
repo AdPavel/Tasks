@@ -17,17 +17,17 @@ def bar_custom(current, total, width=80):
 
 
 class DownloadDataset(Task):
-    dataset = Parameter()
+    # dataset = Parameter()
 
     def run(self):
         if not os.path.exists('data'):
-            os.makedirs(os.path.join('data', self.dataset))
+            os.makedirs(os.path.join('data', GlobalParams().dataset))
 
-        url = f'https://www.ncbi.nlm.nih.gov/geo/download/?acc={self.dataset}&format=file'
-        wget.download(url, f'data/{self.dataset}/{self.dataset}_RAW.tar', bar=bar_custom)
+        url = f'https://www.ncbi.nlm.nih.gov/geo/download/?acc={GlobalParams().dataset}&format=file'
+        wget.download(url, f'data/{GlobalParams().dataset}/{GlobalParams().dataset}_RAW.tar', bar=bar_custom)
 
     def output(self):
-        return LocalTarget(f'data/{self.dataset}/{self.dataset}_RAW.tar')
+        return LocalTarget(f'data/{GlobalParams().dataset}/{GlobalParams().dataset}_RAW.tar')
 
 
 def delete_column(file):
@@ -69,19 +69,19 @@ def create_tsv(file, folder):
 
 
 class UnZip(Task):
-    dataset = Parameter()
+    # dataset = Parameter()
 
     def output(self):
-        return LocalTarget(f'data/{self.dataset}/unzip_filelist.lst')
+        return LocalTarget(f'data/{GlobalParams().dataset}/unzip_filelist.lst')
 
     def run(self):
-        archive = f'data/{self.dataset}/{self.dataset}_RAW.tar'
+        archive = f'data/{GlobalParams().dataset}/{GlobalParams().dataset}_RAW.tar'
 
         with tarfile.open(archive, 'r') as tar:
             for subfile in tar.getmembers():
                 if subfile.name.endswith('.gz'):
                     with gzip.open(tar.extractfile(subfile)) as gz:
-                        folder_name = f'data/{self.dataset}/' + os.path.basename(subfile.name)[:-7]
+                        folder_name = f'data/{GlobalParams().dataset}/' + os.path.basename(subfile.name)[:-7]
                         os.makedirs(folder_name, exist_ok=True)
                         extract_file = os.path.join(folder_name, os.path.basename(subfile.name)[:-3])
                         with open(extract_file, "wb") as f:
@@ -93,17 +93,17 @@ class UnZip(Task):
                     output.write("%s\n" % fn)
 
     def requires(self):
-        return DownloadDataset(self.dataset)
+        return DownloadDataset()
 
 
 class CreateTSV(Task):
-    dataset = Parameter()
+    # dataset = Parameter()
 
     def requires(self):
-        return UnZip(self.dataset)
+        return UnZip()
 
     def output(self):
-        return LocalTarget(f'data/{self.dataset}/tsv_files.lst')
+        return LocalTarget(f'data/{GlobalParams().dataset}/tsv_files.lst')
 
     def run(self):
         for root, dirs, files in os.walk('./data'):
@@ -119,13 +119,13 @@ class CreateTSV(Task):
 
 
 class ModifyProbes(Task):
-    dataset = Parameter()
+    # dataset = Parameter()
 
     def requires(self):
-        return CreateTSV(self.dataset)
+        return CreateTSV()
 
     def output(self):
-        return LocalTarget(f'data/{self.dataset}/modified_probe_files.lst')
+        return LocalTarget(f'data/{GlobalParams().dataset}/modified_probe_files.lst')
 
     def run(self):
         name = 'Probes.tsv'
@@ -141,13 +141,13 @@ class ModifyProbes(Task):
 
 
 class DeleteSourceTXT(Task):
-    dataset = Parameter()
+    # dataset = Parameter()
 
     def requires(self):
-        return ModifyProbes(self.dataset)
+        return ModifyProbes()
 
     def output(self):
-        return LocalTarget(f'data/{self.dataset}/deleted_source_txt.lst')
+        return LocalTarget(f'data/{GlobalParams().dataset}/deleted_source_txt.lst')
 
     def run(self):
 
@@ -159,20 +159,11 @@ class DeleteSourceTXT(Task):
 
 
 if __name__ == '__main__':
-    build([
+    luigi_run_result = build([
         DownloadDataset(),
         UnZip(),
         CreateTSV(),
         ModifyProbes(),
         DeleteSourceTXT()
-           ], local_scheduler=True)
+           ])
 
-
-    # build([
-    #     DownloadDataset('gse68849'),
-    #     UnZip('gse68849'),
-    #     CreateTSV('gse68849'),
-    #     ModifyProbes('gse68849'),
-    #     DeleteSourceTXT('gse68849')
-    #        ], local_scheduler=True)
-    # run()
