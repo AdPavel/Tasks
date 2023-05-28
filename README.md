@@ -3,9 +3,14 @@
 ## Как запустить
 
 1. клонировать в свою папку
-2. в команднгой строке из своей папки выполнить:
+2. в командной строке из своей папки выполнить:
+- установите библиотеки:
 
-```python -m main DownloadDataset --GlobalParams-dataset gse68849```
+``pip install -r requirements.txt ``
+
+- запустите команду:
+
+``python -m main DownloadDataset --GlobalParams-dataset gse68849``
 
 ## Задание
 Написать пайплайн с помощью фреймворка Luigi.
